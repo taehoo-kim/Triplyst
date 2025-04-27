@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Triplyst</string>
+    <string name="title_activity_app_nav_host">AppNavHost</string>
+    <string name="title_activity_home_view_model">HomeViewModel</string>
+    <string name="title_activity_community_view_model">CommunityViewModel</string>
+    <string name="title_activity_chat_view_model">ChatViewModel</string>
+    <string name="title_activity_calendar_view_model">CalendarViewModel</string>
+    <string name="title_activity_profile_view_model">ProfileViewModel</string>
+</resources>
