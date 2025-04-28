@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "683913512555",
+    "project_id": "triplyst-59f54",
+    "storage_bucket": "triplyst-59f54.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:683913512555:android:c7efce68196127aaabd32e",
+        "android_client_info": {
+          "package_name": "com.example.triplyst"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_xZsphvjk6cM8f-92JeW4disiMOY-RrM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

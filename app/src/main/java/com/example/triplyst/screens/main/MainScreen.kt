@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
 import com.example.triplyst.screens.home.HomeScreen
@@ -21,7 +20,9 @@ import com.example.triplyst.screens.profile.ProfileScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    onLogout: () -> Unit = {}
+) {
     var selectedTab by remember { mutableStateOf("Home") }
 
     Scaffold(
@@ -67,7 +68,7 @@ fun MainScreen() {
                 "Community" -> CommunityScreen()
                 "Calendar" -> CalendarScreen()
                 "Chat" -> ChatScreen()
-                "Profile" -> ProfileScreen()
+                "Profile" -> ProfileScreen(onLogout = onLogout)
             }
         }
     }

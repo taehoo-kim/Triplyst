@@ -3,7 +3,7 @@ package com.example.triplyst
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.example.triplyst.screens.main.MainScreen
+import com.example.triplyst.screens.AppEntry
 import androidx.activity.enableEdgeToEdge
 
 class MainActivity : ComponentActivity() {
@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
 //        자동으로 선언하고 시스템 막대의 색상 조정
 
         setContent {
-            MainScreen()
+            AppEntry()
         }
     }
 }
