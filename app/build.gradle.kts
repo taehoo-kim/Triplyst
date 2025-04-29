@@ -59,9 +59,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.material.icons.extended)
     implementation(libs.androidx.viewmodel.compose)
+    implementation("androidx.compose.foundation:foundation")
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("io.coil-kt.coil3:coil-compose:3.1.0")
-
+    implementation("com.kizitonwose.calendar:compose:2.6.0")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 }
