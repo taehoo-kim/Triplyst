@@ -1,6 +1,5 @@
 package com.example.triplyst.screens.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -9,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 
 data class Destination(val name: String, val imageUrl: String)
 data class Course(val title: String, val description: String)
@@ -60,8 +59,8 @@ fun DestinationRow(destinations: List<Destination>) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(8.dp)
                 ) {
-                    Image(
-                        painter = AsyncImage(destination.imageUrl),
+                    AsyncImage(
+                        model = destination.imageUrl,
                         contentDescription = destination.name,
                         modifier = Modifier
                             .height(100.dp)
