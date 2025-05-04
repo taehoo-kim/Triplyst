@@ -62,7 +62,12 @@ fun AppEntry() {
                 BottomNavigationBar(
                     currentRoute = currentRoute,
                     onTabSelected = { route ->
-                        if (route != currentRoute) {
+                        if (route == "home") {
+                            navController.popBackStack("home", inclusive = false)
+                            navController.navigate("home") {
+                                launchSingleTop = true
+                            }
+                        } else {
                             navController.navigate(route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
