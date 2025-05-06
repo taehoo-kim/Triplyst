@@ -8,17 +8,22 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
-
+import com.example.triplyst.data.DatabaseProvider
 import com.example.triplyst.screens.calendar.CalendarScreen
+import com.example.triplyst.viewmodel.calendar.CalendarViewModel
 import com.example.triplyst.screens.chat.ChatScreen
 import com.example.triplyst.screens.community.CommunityScreen
 import com.example.triplyst.screens.home.HomeScreen
+import com.example.triplyst.screens.notification.NotificationScreen
 import com.example.triplyst.screens.profile.ProfileScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,6 +52,9 @@ fun AppEntry() {
                 },
                 actions = {
                     if (currentRoute in bottomNavRoutes) {
+                        IconButton(onClick = { navController.navigate("notifications") }) {
+                            Icon(Icons.Filled.Notifications, contentDescription = "알림")
+                        }
                         IconButton(onClick = { navController.navigate("profile") }) {
                             Icon(
                                 imageVector = Icons.Filled.AccountCircle,
@@ -62,6 +70,7 @@ fun AppEntry() {
                 BottomNavigationBar(
                     currentRoute = currentRoute,
                     onTabSelected = { route ->
+                        // 근데 이게 과연 맞는 방법일까 ..? 더 나은 방법은 없을지
                         if (route == "home") {
                             navController.popBackStack("home", inclusive = false)
                             navController.navigate("home") {
@@ -90,9 +99,16 @@ fun AppEntry() {
                 onAiRecommendClick = { navController.navigate("chat") }
             ) }
             composable("community") { CommunityScreen() }
-            composable("calendar") { CalendarScreen() }
+            composable("calendar") {
+                val context = LocalContext.current
+                val dao = remember {
+                    DatabaseProvider.getDatabase(context).tripScheduleDao() }
+                val viewModel = remember { CalendarViewModel(dao) }
+                CalendarScreen(viewModel = viewModel)
+            }
             composable("chat") { ChatScreen() }
             composable("profile") { ProfileScreen() }
+            composable("notifications") { NotificationScreen() }
         }
     }
 }
