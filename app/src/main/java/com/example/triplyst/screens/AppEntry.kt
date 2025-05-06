@@ -62,6 +62,7 @@ fun AppEntry() {
                 BottomNavigationBar(
                     currentRoute = currentRoute,
                     onTabSelected = { route ->
+                        // 근데 이게 과연 맞는 방법일까 ..? 더 나은 방법은 없을지
                         if (route == "home") {
                             navController.popBackStack("home", inclusive = false)
                             navController.navigate("home") {
