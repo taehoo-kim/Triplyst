@@ -2,8 +2,6 @@ package com.example.triplyst.screens.calendar
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
@@ -11,27 +9,33 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
-import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import com.example.triplyst.model.TripSchedule
+import com.example.triplyst.viewmodel.calendar.CalendarViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun CalendarScreen(
-    schedules: List<TripSchedule> = sampleSchedules
+    viewModel: CalendarViewModel
 ) {
-    val today = remember { LocalDate.now() }
-    var selectedDate by remember { mutableStateOf(today) }
-    val schedulesForSelected = schedules.filter { it.date == selectedDate }
-    var showDialog by remember { mutableStateOf(false) }
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val schedulesForSelected by viewModel.schedulesForSelected.collectAsState()
+
+    // 일정 추가 다이얼로그 상태
+    var showAddDialog by remember { mutableStateOf(false) }
+    var newTitle by remember { mutableStateOf("") }
+    var newDescription by remember { mutableStateOf("") }
+
+    // 일정 수정 다이얼로그 상태
+    var showEditDialog by remember { mutableStateOf(false) }
+    var scheduleToEdit by remember { mutableStateOf<TripSchedule?>(null) }
 
     // 캘린더 상태 생성
     val currentMonth = remember { YearMonth.now() }
@@ -50,45 +54,6 @@ fun CalendarScreen(
     val coroutineScope = rememberCoroutineScope()
     val monthFormatter = remember { DateTimeFormatter.ofPattern("yyyy년 MM월") }
     val currentMonthVisible = calendarState.firstVisibleMonth.yearMonth
-
-    // 다이얼로그 표시
-    if (showDialog) {
-        var title by remember { mutableStateOf("") }
-        var description by remember { mutableStateOf("") }
-
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("일정 추가") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("제목") }
-                    )
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("설명") }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        // 일정 추가하는 기능을 넣어야 함.
-
-                        showDialog = false
-                    }
-                ) { Text("추가") }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDialog = false }
-                ) { Text("취소") }
-            }
-        )
-    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // 월 선택 헤더
@@ -133,29 +98,80 @@ fun CalendarScreen(
                 Day(
                     day = day,
                     isSelected = day.date == selectedDate,
-                    onClick = { selectedDate = day.date }
+                    onClick = { viewModel.setSelectedDate(day.date) }
                 )
             }
         )
 
+        // 일정 추가 다이얼로그
+        if (showAddDialog) {
+            AlertDialog(
+                onDismissRequest = { showAddDialog = false },
+                title = { Text("일정 추가") },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = newTitle,
+                            onValueChange = { newTitle = it },
+                            label = { Text("제목") }
+                        )
+                        OutlinedTextField(
+                            value = newDescription,
+                            onValueChange = { newDescription = it },
+                            label = { Text("설명") }
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (newTitle.isNotBlank()) {
+                                viewModel.addSchedule(newTitle, newDescription)
+                            }
+                            showAddDialog = false
+                        }
+                    ) { Text("추가") }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showAddDialog = false }
+                    ) { Text("취소") }
+                }
+            )
+        }
+
+        // 일정 수정 다이얼로그
+        if (showEditDialog && scheduleToEdit != null){
+            EditScheduleDialog(
+                schedule = scheduleToEdit!!,
+                onDismiss = { showEditDialog = false },
+                onConfirm = { updatedSchedule ->
+                    viewModel.updateSchedule(updatedSchedule)
+                    showEditDialog = false
+                }
+            )
+        }
+
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Text("선택한 날짜의 일정", style = MaterialTheme.typography.titleMedium)
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(schedulesForSelected) { schedule ->
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(schedule.title, style = MaterialTheme.typography.titleSmall)
-                        Text(schedule.description, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
+        ScheduleList(
+            schedules = schedulesForSelected,
+            onDelete = { viewModel.deleteSchedule(it) },
+            onEdit = {
+                scheduleToEdit = it
+                showEditDialog = true
             }
-        }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { showDialog = true },
+            onClick = {
+                newTitle = ""
+                newDescription = ""
+                showAddDialog = true },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("일정 추가")
@@ -181,10 +197,3 @@ fun Day(day: CalendarDay, isSelected: Boolean, onClick: () -> Unit) {
         }
     }
 }
-
-// 샘플 데이터 (model/TripSchedule.kt에 정의된 data class TripSchedule 사용)
-val sampleSchedules = listOf(
-    TripSchedule(1, LocalDate.now(), "제주도 도착", "공항 도착 후 렌터카 픽업"),
-    TripSchedule(2, LocalDate.now(), "오설록 티뮤지엄 방문", "녹차 아이스크림 먹기"),
-    TripSchedule(3, LocalDate.now().plusDays(1), "성산일출봉 등반", "아침 일찍 등산 시작")
-)
