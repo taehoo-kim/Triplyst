@@ -1,11 +1,13 @@
 package com.example.triplyst.model
 
-import java.time.LocalDateTime
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentId
 
 data class CommunityPost(
-    val id: Int,
-    val author: String,
-    val title: String,
-    val content: String,
-    val createdAt: LocalDateTime
+    @DocumentId val id: String = "",
+    val userId: String = "",
+    val author: String = "익명",
+    val title: String = "",
+    val content: String = "",
+    val createdAt: Timestamp = Timestamp.now()
 )
