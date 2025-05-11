@@ -1,5 +1,6 @@
 package com.example.triplyst.screens.login
 
+import android.util.Patterns
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,6 +38,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isSignUpMode by remember { mutableStateOf(false) }
+    var emailError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -49,10 +51,16 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(24.dp))
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = {
+                email = it
+                emailError = null },
             label = { Text("이메일") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = emailError != null
         )
+        if (emailError != null) {
+            Text(emailError!!, color = MaterialTheme.colorScheme.error)
+        }
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = password,
@@ -70,6 +78,12 @@ fun LoginScreen(
 
         Button(
             onClick = {
+                val trimmedEmail = email.trim()
+                // 이메일 형식 체크
+                if (!Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
+                    emailError = "올바른 이메일 형식을 입력하세요."
+                    return@Button
+                }
                 if (isSignUpMode) {
                     loginViewModel.signup(email, password)
                 } else {

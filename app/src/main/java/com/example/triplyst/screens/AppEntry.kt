@@ -23,6 +23,7 @@ import com.example.triplyst.viewmodel.calendar.CalendarViewModel
 import com.example.triplyst.screens.chat.ChatScreen
 import com.example.triplyst.screens.community.CommunityScreen
 import com.example.triplyst.screens.home.HomeScreen
+import com.example.triplyst.screens.login.LoginScreen
 import com.example.triplyst.screens.notification.NotificationScreen
 import com.example.triplyst.screens.profile.ProfileScreen
 
@@ -92,9 +93,16 @@ fun AppEntry() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "login",
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable("login"){ LoginScreen(
+                onLoginSuccess = { navController.navigate("home"){
+                    popUpTo("login") { inclusive = true }
+                } }
+            )
+
+            }
             composable("home") { HomeScreen(
                 onAiRecommendClick = { navController.navigate("chat") }
             ) }
