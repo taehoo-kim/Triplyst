@@ -14,3 +14,9 @@
 .cxx
 local.properties
 /app/google-services.json
+
+# Keystore files (release, debug)
+*.jks
+*.keystore
+/app/my-release-key.jks
+key.properties
