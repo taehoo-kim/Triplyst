@@ -5,36 +5,92 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.triplyst.model.CommunityPost
-import java.time.LocalDateTime
+import com.example.triplyst.viewmodel.community.CommunityViewModel
+import com.google.firebase.Timestamp
+import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import com.example.triplyst.viewmodel.community.CommunityUiState
 
 
 @Composable
 fun CommunityScreen(
-    posts: List<CommunityPost> = samplePosts
+    viewModel: CommunityViewModel = viewModel()
 ) {
-    var selectedPost by remember { mutableStateOf<CommunityPost?>(null) }
 
-    if (selectedPost == null) {
-        // 게시글 리스트
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text("커뮤니티", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            LazyColumn {
-                items(posts) { post ->
-                    CommunityPostCard(post = post, onClick = { selectedPost = post })
-                }
+    val uiState by viewModel.uiState.collectAsState()
+    var selectedPost by remember { mutableStateOf<CommunityPost?>(null) }
+    var isWriting by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadPosts()
+    }
+
+    when (val state = uiState) {
+        is CommunityUiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
         }
-    } else {
-        // 게시글 상세 보기
-        CommunityPostDetail(post = selectedPost!!, onBack = { selectedPost = null })
+        is CommunityUiState.Success -> {
+            if (selectedPost != null) {
+                CommunityPostDetail(
+                    post = selectedPost!!,
+                    onBack = { selectedPost = null }
+                )
+            } else if (isWriting) {
+                NewPostScreen(
+                    viewModel = viewModel,
+                    onCancel = { isWriting = false },
+                    onSubmit = {
+                        isWriting = false
+                        viewModel.loadPosts()
+                    }
+                )
+            } else {
+                CommunityPostList(
+                    posts = state.posts,
+                    onPostClick = { selectedPost = it },
+                    onWriteClick = { isWriting = true }
+                )
+            }
+        }
+        is CommunityUiState.Error -> {
+            ErrorMessage(message = state.message)
+        }
+    }
+}
+
+@Composable
+private fun CommunityPostList(
+    posts: List<CommunityPost>,
+    onPostClick: (CommunityPost) -> Unit,
+    onWriteClick: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("커뮤니티", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(onClick = onWriteClick) {
+                Icon(Icons.Default.Add, contentDescription = "새 글 쓰기")
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        LazyColumn {
+            items(posts) { post ->
+                CommunityPostCard(post = post, onClick = { onPostClick(post) })
+            }
+        }
     }
 }
 
@@ -49,11 +105,14 @@ fun CommunityPostCard(post: CommunityPost, onClick: () -> Unit) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(post.title, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("by ${post.author} · ${post.createdAt.format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm"))}",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "by ${post.author} · ${formatFirestoreTimestamp(post.createdAt)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                post.content.take(50) + if (post.content.length > 50) "..." else "",
+                post.content.take(100) + if (post.content.length > 100) "..." else "",
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -79,35 +138,74 @@ fun CommunityPostDetail(post: CommunityPost, onBack: () -> Unit) {
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).padding(16.dp)) {
-            Text("by ${post.author} · ${post.createdAt.format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm"))}",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "by ${post.author} · ${formatFirestoreTimestamp(post.createdAt)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Spacer(modifier = Modifier.height(12.dp))
             Text(post.content, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
 
-// 샘플 더미 데이터
-val samplePosts = listOf(
-    CommunityPost(
-        id = 1,
-        author = "여행가1",
-        title = "제주도 추천 코스 공유해요!",
-        content = "성산일출봉, 우도, 협재해수욕장 정말 좋았어요. 맛집도 많고 경치도 끝내줍니다!",
-        createdAt = LocalDateTime.now().minusDays(1)
-    ),
-    CommunityPost(
-        id = 2,
-        author = "여행가2",
-        title = "부산 해운대 근처 숙소 추천 좀 해주세요",
-        content = "다음주에 부산 여행 가는데 해운대 근처 가성비 좋은 숙소 아시는 분 있나요?",
-        createdAt = LocalDateTime.now().minusHours(5)
-    ),
-    CommunityPost(
-        id = 3,
-        author = "여행가3",
-        title = "강릉 카페 거리 후기",
-        content = "강릉 카페 거리 너무 예쁘고 커피도 맛있어요. 인생샷 건졌습니다!",
-        createdAt = LocalDateTime.now().minusDays(2)
-    )
-)
+@Composable
+private fun NewPostScreen(
+    viewModel: CommunityViewModel,
+    onCancel: () -> Unit,
+    onSubmit: () -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var content by remember { mutableStateOf("") }
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("새 글 작성", style = MaterialTheme.typography.titleLarge)
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            label = { Text("제목") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = content,
+            onValueChange = { content = it },
+            label = { Text("내용") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),
+            maxLines = 10
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Row {
+            Button(
+                onClick = {
+                    viewModel.submitPost(title, content)
+                    onSubmit()
+                },
+                enabled = title.isNotBlank() && content.isNotBlank()
+            ) {
+                Text("등록")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            TextButton(onClick = onCancel) {
+                Text("취소")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorMessage(message: String) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = "오류 발생: $message", color = MaterialTheme.colorScheme.error)
+    }
+}
+
+private fun formatFirestoreTimestamp(timestamp: Timestamp): String {
+    val instant = Instant.ofEpochSecond(timestamp.seconds)
+    val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")
+        .withZone(ZoneId.systemDefault())
+    return formatter.format(instant)
+}
