@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.example.triplyst.viewmodel.community.CommunityUiState
+import com.google.firebase.auth.FirebaseAuth
 
 
 @Composable
@@ -31,9 +33,27 @@ fun CommunityScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedPost by remember { mutableStateOf<CommunityPost?>(null) }
     var isWriting by remember { mutableStateOf(false) }
+    var postToDelete by remember { mutableStateOf<CommunityPost?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.loadPosts()
+    }
+
+    if (postToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { postToDelete = null },
+            title = { Text("게시글 삭제") },
+            text = { Text("정말 이 게시글을 삭제하시겠습니까?") },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.deletePost(postToDelete!!.id)
+                    postToDelete = null
+                }) { Text("삭제") }
+            },
+            dismissButton = {
+                TextButton(onClick = { postToDelete = null }) { Text("취소") }
+            }
+        )
     }
 
     when (val state = uiState) {
@@ -61,7 +81,8 @@ fun CommunityScreen(
                 CommunityPostList(
                     posts = state.posts,
                     onPostClick = { selectedPost = it },
-                    onWriteClick = { isWriting = true }
+                    onWriteClick = { isWriting = true },
+                    onDelete = { postToDelete = it}
                 )
             }
         }
@@ -75,7 +96,8 @@ fun CommunityScreen(
 private fun CommunityPostList(
     posts: List<CommunityPost>,
     onPostClick: (CommunityPost) -> Unit,
-    onWriteClick: () -> Unit
+    onWriteClick: () -> Unit,
+    onDelete: (CommunityPost) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -88,14 +110,19 @@ private fun CommunityPostList(
         Spacer(modifier = Modifier.height(16.dp))
         LazyColumn {
             items(posts) { post ->
-                CommunityPostCard(post = post, onClick = { onPostClick(post) })
+                CommunityPostCard(post = post, onClick = { onPostClick(post) }, onDelete = onDelete)
             }
         }
     }
 }
 
 @Composable
-fun CommunityPostCard(post: CommunityPost, onClick: () -> Unit) {
+fun CommunityPostCard(post: CommunityPost,
+                      onClick: () -> Unit,
+                      onDelete: ((CommunityPost) -> Unit)? = null) {
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val isMyPost = post.author == (currentUser?.displayName ?: "")
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -103,7 +130,15 @@ fun CommunityPostCard(post: CommunityPost, onClick: () -> Unit) {
             .clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(post.title, style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(post.title, style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.weight(1f))
+                if (isMyPost && onDelete != null) {
+                    IconButton(onClick = { onDelete(post) }) {
+                        Icon(Icons.Default.Delete, contentDescription = "삭제")
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 "by ${post.author} · ${formatFirestoreTimestamp(post.createdAt)}",

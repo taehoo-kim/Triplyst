@@ -23,4 +23,8 @@ class CommunityRepository {
     suspend fun addPost(post: CommunityPost) {
         postsCollection.add(post).await()
     }
+
+    suspend fun deletePost(postId: String) {
+        db.collection("communityPosts").document(postId).delete().await()
+    }
 }

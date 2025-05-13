@@ -53,4 +53,16 @@ class CommunityViewModel (
             }
         }
     }
+
+    // 게시글 삭제
+    fun deletePost(postId: String) {
+        viewModelScope.launch {
+            try {
+                repository.deletePost(postId)
+                loadPosts() // 삭제 후 목록 새로고침
+            } catch (e: Exception) {
+                _uiState.value = CommunityUiState.Error(e.message ?: "게시글 삭제 실패")
+            }
+        }
+    }
 }
