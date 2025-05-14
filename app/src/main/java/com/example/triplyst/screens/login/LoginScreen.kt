@@ -1,8 +1,5 @@
 package com.example.triplyst.screens.login
 
-import android.content.Context
-import android.content.Intent
-import android.content.IntentSender
 import android.util.Patterns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -30,13 +27,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import com.example.triplyst.viewmodel.login.LoginState
 import com.example.triplyst.viewmodel.login.LoginViewModel
-import com.google.android.gms.auth.api.identity.Identity
-import com.google.android.gms.auth.api.identity.SignInClient
-import com.google.firebase.auth.GoogleAuthProvider
+import com.example.triplyst.R
 
 @Composable
 fun LoginScreen(
@@ -53,6 +59,8 @@ fun LoginScreen(
         loginViewModel.handleGoogleSignInResult(context, result.data)
     }
 
+    // 이메일/비밀번호 입력 폼 노출 여부
+    var showEmailLogin by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isSignUpMode by remember { mutableStateOf(false) }
@@ -65,83 +73,151 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = if (isSignUpMode) "회원가입" else "로그인", style = MaterialTheme.typography.headlineLarge)
-        Spacer(modifier = Modifier.height(24.dp))
-        OutlinedTextField(
-            value = email,
-            onValueChange = {
-                email = it
-                emailError = null },
-            label = { Text("이메일") },
-            modifier = Modifier.fillMaxWidth(),
-            isError = emailError != null
-        )
-        if (emailError != null) {
-            Text(emailError!!, color = MaterialTheme.colorScheme.error)
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("비밀번호") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(24.dp))
+        Text("로그인",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            )
+        Spacer(modifier = Modifier.height(32.dp))
 
-        if (loginState is LoginState.Error) {
-            Text((loginState as LoginState.Error).message, color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        Button(
-            onClick = {
-                val trimmedEmail = email.trim()
-                // 이메일 형식 체크
-                if (!Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
-                    emailError = "올바른 이메일 형식을 입력하세요."
-                    return@Button
-                }
-                if (isSignUpMode) {
-                    loginViewModel.signup(email, password)
-                } else {
-                    loginViewModel.login(email, password)
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = loginState != LoginState.Loading
-        ) {
-            Text(if (isSignUpMode) "회원가입" else "로그인")
-        }
-
-        // 구글 로그인 버튼
-        Button(
+        // 소셜 로그인 버튼들
+        SocialLoginButton(
+            text = "구글로 계속하기",
+            color = Color(0xFFEAEAEA),
+            iconRes = R.drawable.ic_google,
+            textColor = Color(0xFF1F1F1F),
             onClick = {
                 loginViewModel.startGoogleSignIn(context) { intentSender ->
                     googleSignInLauncher.launch(
                         IntentSenderRequest.Builder(intentSender).build()
                     )
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Google로 계속하기")
+            }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        SocialLoginButton(
+            text = "카카오로 계속하기",
+            color = Color(0xFFFEE500),
+            iconRes = R.drawable.ic_kakao,
+            onClick = { /* TODO: 카카오 로그인 */ }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        SocialLoginButton(
+            text = "페이스북으로 계속하기",
+            color = Color(0xFF1877F2),
+            iconRes = R.drawable.ic_facebook,
+            onClick = { /* TODO: 페이스북 로그인 */ }
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // 이메일 로그인 펼치기 버튼
+        TextButton(onClick = { showEmailLogin = !showEmailLogin }) {
+            Text(if (showEmailLogin) "이메일 로그인 닫기" else "이메일로 로그인")
         }
 
-        TextButton(onClick = { isSignUpMode = !isSignUpMode }) {
-            Text(if (isSignUpMode) "이미 계정이 있으신가요? 로그인" else "계정이 없으신가요? 회원가입")
+        // 이메일/비밀번호 입력 폼 (펼침)
+        if (showEmailLogin) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = email,
+                onValueChange = {
+                    email = it
+                    emailError = null
+                },
+                label = { Text("이메일") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = emailError != null
+            )
+            if (emailError != null) {
+                Text(emailError!!, color = MaterialTheme.colorScheme.error)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("비밀번호") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    val trimmedEmail = email.trim()
+                    if (!Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
+                        emailError = "올바른 이메일 형식을 입력하세요."
+                        return@Button
+                    }
+                    if (isSignUpMode) {
+                        loginViewModel.signup(email, password)
+                    } else {
+                        loginViewModel.login(email, password)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = loginState != LoginState.Loading
+            ) {
+                Text(if (isSignUpMode) "회원가입" else "로그인")
+            }
+            TextButton(onClick = { isSignUpMode = !isSignUpMode }) {
+                Text(if (isSignUpMode) "이미 계정이 있으신가요? 로그인" else "계정이 없으신가요? 회원가입")
+            }
         }
 
-        // 로딩 인디케이터
+        // 에러/로딩 표시
+        if (loginState is LoginState.Error) {
+            Text((loginState as LoginState.Error).message, color = MaterialTheme.colorScheme.error)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         if (loginState == LoginState.Loading) {
             CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
         }
+
     }
 
     // 로그인 성공 시 콜백
     if (loginState == LoginState.Success) {
         LaunchedEffect(Unit) {
             onLoginSuccess()
+        }
+    }
+}
+
+@Composable
+fun SocialLoginButton(
+    text: String,
+    color: Color,
+    iconRes: Int,
+    textColor: Color = Color.Unspecified,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = color),
+        contentPadding = PaddingValues(0.dp), // 내부 여백 직접 관리
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Spacer(Modifier.width(16.dp))
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp), // padding 대신 Spacer로 여백 확보
+                tint = Color.Unspecified
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = text,
+                color = textColor,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.width(24.dp)) // 오른쪽 여백 (아이콘 크기만큼)
         }
     }
 }
