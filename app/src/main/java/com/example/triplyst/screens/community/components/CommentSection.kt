@@ -19,7 +19,7 @@ fun CommentSection(
 ) {
     var commentText by remember { mutableStateOf("") }
 
-    Column(Modifier.padding(16.dp)) {
+    Column{
         Text("댓글", style = MaterialTheme.typography.titleMedium)
         OutlinedTextField(
             value = commentText,

@@ -36,8 +36,12 @@ fun CommunityPostDetail(
             )
         }
     ) { innerPadding ->
-        Column(Modifier.padding(innerPadding)) {
+        Column(Modifier.padding(innerPadding)
+            .padding(16.dp)
+            .fillMaxWidth()
+        ) {
             PostContentSection(post = post)
+            Spacer(modifier = Modifier.height(24.dp))
             CommentSection(
                 comments = comments,
                 onSubmitComment = { content -> viewModel.submitComment(post.id, content) }
@@ -54,5 +58,9 @@ fun PostContentSection(post: CommunityPost) {
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
     Spacer(modifier = Modifier.height(12.dp))
-    Text(post.content, style = MaterialTheme.typography.bodyLarge)
+    Text(
+        post.content,
+        style = MaterialTheme.typography.bodyLarge,
+        modifier = Modifier.fillMaxWidth()
+    )
 }
