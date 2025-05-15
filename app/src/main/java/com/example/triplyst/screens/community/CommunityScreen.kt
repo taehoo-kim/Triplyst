@@ -61,7 +61,7 @@ fun CommunityScreen(
         is CommunityUiState.Success -> {
             if (selectedPost != null) {
                 CommunityPostDetail(
-                    post = selectedPost!!,
+                    postId = selectedPost!!.id,
                     onBack = { selectedPost = null },
                     viewModel = viewModel
                 )

@@ -112,4 +112,37 @@ class CommunityViewModel (
         }
     }
 
+    // 상세 화면 전용 실시간 관찰 함수
+    fun observePost(postId: String) {
+        viewModelScope.launch {
+            repository.getPostStream(postId).collect { post ->
+                _selectedPost.value = post
+            }
+        }
+    }
+
+    // 좋아요 관련 함수
+    fun toggleLike(post: CommunityPost, userId: String) {
+        viewModelScope.launch {
+            // 낙관적 업데이트: UI 먼저 변경
+            val updatedPost = post.copy(
+                likes = if (post.userLikes.contains(userId)) post.likes - 1 else post.likes + 1,
+                userLikes = if (post.userLikes.contains(userId))
+                    post.userLikes - userId
+                else
+                    post.userLikes + userId
+            )
+            _selectedPost.value = updatedPost
+
+            try {
+                // 서버에 업데이트 요청
+                repository.toggleLike(post.id, userId, !post.userLikes.contains(userId))
+            } catch (e: Exception) {
+                // 실패 시 롤백
+                _selectedPost.value = post
+                _uiState.value = CommunityUiState.Error("좋아요 처리 실패: ${e.message}")
+            }
+        }
+    }
+
 }
