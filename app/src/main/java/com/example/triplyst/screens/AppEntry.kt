@@ -39,32 +39,34 @@ fun AppEntry() {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Triplyst") },
-                navigationIcon = {
-                    if (currentRoute !in bottomNavRoutes) {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
+            if(currentRoute != "login") {
+                TopAppBar(
+                    title = { Text("Triplyst") },
+                    navigationIcon = {
+                        if (currentRoute !in bottomNavRoutes) {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        if (currentRoute in bottomNavRoutes) {
+                            IconButton(onClick = { navController.navigate("notifications") }) {
+                                Icon(Icons.Filled.Notifications, contentDescription = "알림")
+                            }
+                            IconButton(onClick = { navController.navigate("profile") }) {
+                                Icon(
+                                    imageVector = Icons.Filled.AccountCircle,
+                                    contentDescription = "Profile"
+                                )
+                            }
                         }
                     }
-                },
-                actions = {
-                    if (currentRoute in bottomNavRoutes) {
-                        IconButton(onClick = { navController.navigate("notifications") }) {
-                            Icon(Icons.Filled.Notifications, contentDescription = "알림")
-                        }
-                        IconButton(onClick = { navController.navigate("profile") }) {
-                            Icon(
-                                imageVector = Icons.Filled.AccountCircle,
-                                contentDescription = "Profile"
-                            )
-                        }
-                    }
-                }
-            )
+                )
+            }
         },
         bottomBar = {
             if (currentRoute in bottomNavRoutes) {

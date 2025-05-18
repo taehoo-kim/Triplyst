@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.example.triplyst.screens.AppEntry
 import androidx.activity.enableEdgeToEdge
+import com.example.triplyst.ui.theme.TriplystTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -16,7 +17,9 @@ class MainActivity : ComponentActivity() {
 //        자동으로 선언하고 시스템 막대의 색상 조정
 
         setContent {
-            AppEntry()
+            TriplystTheme {
+                AppEntry()
+            }
         }
     }
 }
