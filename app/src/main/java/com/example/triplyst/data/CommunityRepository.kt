@@ -96,4 +96,20 @@ class CommunityRepository {
             ))
         }.await()
     }
+
+    suspend fun updateAuthorName(userId: String, newAuthor: String){
+        try {
+            val querySnapshot = firestore.collection("community_posts")
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                document.reference.update("author", newAuthor).await()
+            }
+        } catch (e: Exception) {
+            Log.e("CommunityRepository", "updateAuthorName 실패", e)
+            throw e
+        }
+    }
 }

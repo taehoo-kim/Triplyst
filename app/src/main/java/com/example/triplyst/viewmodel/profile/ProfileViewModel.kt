@@ -1,12 +1,15 @@
 package com.example.triplyst.viewmodel.profile
 
 import androidx.lifecycle.ViewModel
+import com.example.triplyst.data.CommunityRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
 class ProfileViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
@@ -56,7 +59,15 @@ class ProfileViewModel : ViewModel() {
                                     .build()
                             )
                             _nickname.value = newNickname
-                            onResult(true, null)
+                            viewModelScope.launch {
+                                try {
+                                    val repository = CommunityRepository()
+                                    repository.updateAuthorName(uid!!, newNickname)
+                                    onResult(true, null)
+                                } catch (e: Exception) {
+                                    onResult(false, "게시글 닉네임 동기화 실패: ${e.message}")
+                                }
+                            }
                         }
                         .addOnFailureListener {
                             onResult(false, "닉네임 변경 실패: ${it.message}")

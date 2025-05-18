@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.triplyst.data.CommunityRepository
 import com.example.triplyst.model.Comment
 import com.example.triplyst.model.CommunityPost
-import com.example.triplyst.viewmodel.community.CommunityUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -47,6 +46,7 @@ class CommunityViewModel (
             }
 
             val newPost = CommunityPost(
+                userId = currentUser.uid,
                 author = currentUser.displayName ?: "익명",
                 title = title,
                 content = content
