@@ -131,7 +131,17 @@ fun AppEntry() {
                 CalendarScreen(viewModel = viewModel)
             }
             composable("chat") { ChatScreen() }
-            composable("profile") { ProfileScreen() }
+            composable("profile") {
+                ProfileScreen(
+                    onLogout = {
+                        FirebaseAuth.getInstance().signOut()
+                        navController.navigate("login") {
+                            popUpTo("login") { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
             composable(
                 route = "notifications/{userId}",
                 arguments = listOf(navArgument("userId") { type = NavType.StringType })
