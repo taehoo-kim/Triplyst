@@ -16,7 +16,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.*
+import androidx.navigation.navArgument
 import com.example.triplyst.data.DatabaseProvider
 import com.example.triplyst.screens.calendar.CalendarScreen
 import com.example.triplyst.viewmodel.calendar.CalendarViewModel
@@ -26,6 +28,7 @@ import com.example.triplyst.screens.home.HomeScreen
 import com.example.triplyst.screens.login.LoginScreen
 import com.example.triplyst.screens.notification.NotificationScreen
 import com.example.triplyst.screens.profile.ProfileScreen
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +42,7 @@ fun AppEntry() {
 
     Scaffold(
         topBar = {
-            if(currentRoute != "login") {
+            if (currentRoute != "login") {
                 TopAppBar(
                     title = { Text("Triplyst") },
                     navigationIcon = {
@@ -54,7 +57,12 @@ fun AppEntry() {
                     },
                     actions = {
                         if (currentRoute in bottomNavRoutes) {
-                            IconButton(onClick = { navController.navigate("notifications") }) {
+                            IconButton(onClick = {
+                                // 현재 로그인한 유저의 uid를 가져옴
+                                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                                // userId를 포함해서 알림 화면으로 이동
+                                navController.navigate("notifications/$userId")
+                            }) {
                                 Icon(Icons.Filled.Notifications, contentDescription = "알림")
                             }
                             IconButton(onClick = { navController.navigate("profile") }) {
@@ -98,27 +106,39 @@ fun AppEntry() {
             startDestination = "login",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("login"){ LoginScreen(
-                onLoginSuccess = { navController.navigate("home"){
-                    popUpTo("login") { inclusive = true }
-                } }
-            )
+            composable("login") {
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                )
 
             }
-            composable("home") { HomeScreen(
-                onAiRecommendClick = { navController.navigate("chat") }
-            ) }
+            composable("home") {
+                HomeScreen(
+                    onAiRecommendClick = { navController.navigate("chat") }
+                )
+            }
             composable("community") { CommunityScreen() }
             composable("calendar") {
                 val context = LocalContext.current
                 val dao = remember {
-                    DatabaseProvider.getDatabase(context).tripScheduleDao() }
+                    DatabaseProvider.getDatabase(context).tripScheduleDao()
+                }
                 val viewModel = remember { CalendarViewModel(dao) }
                 CalendarScreen(viewModel = viewModel)
             }
             composable("chat") { ChatScreen() }
             composable("profile") { ProfileScreen() }
-            composable("notifications") { NotificationScreen() }
+            composable(
+                route = "notifications/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                NotificationScreen(userId = userId)
+            }
         }
     }
 }

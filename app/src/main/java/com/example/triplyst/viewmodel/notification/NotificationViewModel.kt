@@ -2,14 +2,14 @@ package com.example.triplyst.viewmodel.notification
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.triplyst.data.notification.NotificationRepository
+import com.example.triplyst.model.Notification
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.example.triplyst.data.notification.NotificationRepository
-import com.example.triplyst.model.Notification
 
 @HiltViewModel
 class NotificationViewModel @Inject constructor(
@@ -19,9 +19,9 @@ class NotificationViewModel @Inject constructor(
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications: StateFlow<List<Notification>> = _notifications.asStateFlow()
 
-    init {
+    fun observeMyNotifications(userId: String) {
         viewModelScope.launch {
-            repository.getNotifications().collect {
+            repository.getNotifications(userId).collect {
                 _notifications.value = it
             }
         }

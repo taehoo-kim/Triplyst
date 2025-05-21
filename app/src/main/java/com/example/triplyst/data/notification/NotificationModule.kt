@@ -12,7 +12,7 @@ object NotificationModule {
 
     @Provides
     @Singleton
-    fun provideNotificationRepository(dataSource: NotificationDataSource): NotificationRepository {
-        return NotificationRepositoryImpl(dataSource)
+    fun provideNotificationRepository(): NotificationRepository {
+        return FirestoreNotificationRepository()
     }
 }

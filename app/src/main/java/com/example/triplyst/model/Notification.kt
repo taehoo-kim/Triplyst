@@ -1,16 +1,14 @@
 package com.example.triplyst.model
 
-import java.util.UUID
-
-enum class NotificationType {
-    COMMENT, LIKE, SCHEDULE
-}
+enum class NotificationType { LIKE, COMMENT, SCHEDULE }
 
 data class Notification(
-    val id: String = UUID.randomUUID().toString(),
-    val type: NotificationType,
-    val title: String,
-    val message: String,
+    val id: String = "",
+    val userId: String = "",
+    val type: NotificationType = NotificationType.LIKE,
+    val title: String = "",
+    val message: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val isRead: Boolean = false
 )
+

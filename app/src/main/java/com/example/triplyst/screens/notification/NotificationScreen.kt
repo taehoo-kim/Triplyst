@@ -9,22 +9,24 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.triplyst.model.Notification
-import com.example.triplyst.model.NotificationType
-import com.example.triplyst.viewmodel.notification.NotificationViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.triplyst.viewmodel.notification.NotificationViewModel
 
 @Composable
 fun NotificationScreen(
-    viewModel: NotificationViewModel = hiltViewModel()
+    viewModel: NotificationViewModel = hiltViewModel(),
+    userId: String
 ) {
     val notifications by viewModel.notifications.collectAsState()
+    // 화면 진입 시 내 알림 구독 시작
+    LaunchedEffect(userId) {
+        viewModel.observeMyNotifications(userId)
+    }
 
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         items(notifications) { notification ->

@@ -7,8 +7,8 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import com.example.triplyst.model.CommunityPost
 import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.ktx.toObjects
+import com.example.triplyst.model.Notification
+import com.example.triplyst.model.NotificationType
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -111,5 +111,31 @@ class CommunityRepository {
             Log.e("CommunityRepository", "updateAuthorName 실패", e)
             throw e
         }
+    }
+
+    // 좋아요 알림 생성
+    suspend fun sendLikeNotification(postOwnerId: String, postTitle: String, likerName: String) {
+        val notification = Notification(
+            userId = postOwnerId,
+            type = NotificationType.LIKE,
+            title = "새로운 좋아요",
+            message = "$likerName 님이 '$postTitle' 글에 좋아요를 눌렀어요!",
+            timestamp = System.currentTimeMillis(),
+            isRead = false
+        )
+        Firebase.firestore.collection("notifications").add(notification).await()
+    }
+
+    // 댓글 알림 생성
+    suspend fun sendCommentNotification(postOwnerId: String, postTitle: String, commenterName: String, comment: String) {
+        val notification = Notification(
+            userId = postOwnerId,
+            type = NotificationType.COMMENT,
+            title = "새로운 댓글",
+            message = "$commenterName: $comment",
+            timestamp = System.currentTimeMillis(),
+            isRead = false
+        )
+        Firebase.firestore.collection("notifications").add(notification).await()
     }
 }
