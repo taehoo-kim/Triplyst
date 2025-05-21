@@ -95,7 +95,7 @@ class CommunityViewModel (
                 _uiState.value = CommunityUiState.Error("로그인 필요")
                 return@launch
             }
-
+            val post = repository.getPostById(postId) ?: return@launch
             val comment = Comment(
                 postId = postId,
                 userId = user.uid,
@@ -106,6 +106,16 @@ class CommunityViewModel (
             try {
                 repository.addComment(comment)
                 loadComments(postId)
+
+//                // 댓글 알림 트리거
+//                if (post.userId != user.uid) {
+                    repository.sendCommentNotification(
+                        postOwnerId = post.userId,
+                        postTitle = post.title,
+                        commenterName = user.displayName ?: "익명",
+                        comment = content
+                    )
+//                }
             } catch (e: Exception) {
                 _uiState.value = CommunityUiState.Error("댓글 작성 실패")
             }
@@ -141,6 +151,14 @@ class CommunityViewModel (
                 // 실패 시 롤백
                 _selectedPost.value = post
                 _uiState.value = CommunityUiState.Error("좋아요 처리 실패: ${e.message}")
+            }
+
+            if (post.userId != userId) { // 테스트할 땐 빼고 하면 될 듯
+                repository.sendLikeNotification(
+                    postOwnerId = post.userId,
+                    postTitle = post.title,
+                    likerName = FirebaseAuth.getInstance().currentUser?.displayName ?: "익명"
+                )
             }
         }
     }

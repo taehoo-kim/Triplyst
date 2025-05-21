@@ -153,4 +153,13 @@ class CommunityRepository {
         )
         Firebase.firestore.collection("notifications").add(notification).await()
     }
+
+    // postId로 post 객체 가져오기
+    suspend fun getPostById(postId: String): CommunityPost? {
+        val snapshot = firestore.collection("community_posts")
+            .document(postId)
+            .get()
+            .await()
+        return snapshot.toObject(CommunityPost::class.java)
+    }
 }
