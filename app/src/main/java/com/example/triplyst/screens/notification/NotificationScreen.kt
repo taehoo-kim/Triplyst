@@ -15,10 +15,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.triplyst.viewmodel.notification.NotificationViewModel
 
 @Composable
 fun NotificationScreen(
+    navController: NavController,
     viewModel: NotificationViewModel = hiltViewModel(),
     userId: String
 ) {
@@ -30,7 +32,15 @@ fun NotificationScreen(
 
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         items(notifications) { notification ->
-            NotificationItem(notification = notification)
+            NotificationItem(
+                notification = notification,
+                onItemClick = { postId ->
+                    navController.navigate("communityPostDetail/$postId")
+                },
+                onMarkAsRead = { notificationId ->
+                    viewModel.markAsRead(notificationId)
+                }
+            )
             Divider()
         }
     }

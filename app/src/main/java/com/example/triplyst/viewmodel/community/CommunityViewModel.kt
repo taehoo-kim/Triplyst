@@ -113,7 +113,8 @@ class CommunityViewModel (
                         postOwnerId = post.userId,
                         postTitle = post.title,
                         commenterName = user.displayName ?: "익명",
-                        comment = content
+                        comment = content,
+                        postId = post.id
                     )
 //                }
             } catch (e: Exception) {
@@ -157,7 +158,8 @@ class CommunityViewModel (
                 repository.sendLikeNotification(
                     postOwnerId = post.userId,
                     postTitle = post.title,
-                    likerName = FirebaseAuth.getInstance().currentUser?.displayName ?: "익명"
+                    likerName = FirebaseAuth.getInstance().currentUser?.displayName ?: "익명",
+                    postId = post.id
                 )
             }
         }

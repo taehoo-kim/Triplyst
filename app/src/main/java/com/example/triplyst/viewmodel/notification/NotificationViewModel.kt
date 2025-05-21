@@ -19,11 +19,15 @@ class NotificationViewModel @Inject constructor(
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications: StateFlow<List<Notification>> = _notifications.asStateFlow()
 
+    private val _unreadCount = MutableStateFlow(0)
+    val unreadCount: StateFlow<Int> = _unreadCount
+
     fun observeMyNotifications(userId: String) {
         viewModelScope.launch {
-            repository.getNotifications(userId).collect {
-                _notifications.value = it
-            }
+            repository.getNotifications(userId).collect { _notifications.value = it }
+        }
+        viewModelScope.launch {
+            repository.observeUnreadCount(userId).collect { _unreadCount.value = it }
         }
     }
 

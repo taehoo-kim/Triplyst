@@ -11,10 +11,12 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
@@ -24,10 +26,13 @@ import com.example.triplyst.screens.calendar.CalendarScreen
 import com.example.triplyst.viewmodel.calendar.CalendarViewModel
 import com.example.triplyst.screens.chat.ChatScreen
 import com.example.triplyst.screens.community.CommunityScreen
+import com.example.triplyst.screens.community.components.CommunityPostDetail
 import com.example.triplyst.screens.home.HomeScreen
 import com.example.triplyst.screens.login.LoginScreen
 import com.example.triplyst.screens.notification.NotificationScreen
 import com.example.triplyst.screens.profile.ProfileScreen
+import com.example.triplyst.viewmodel.community.CommunityViewModel
+import com.example.triplyst.viewmodel.notification.NotificationViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,6 +41,11 @@ fun AppEntry() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    // 알림 뱃지 상태 구독 - userId 필요
+    val notificationViewModel: NotificationViewModel = hiltViewModel()
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val unreadCount by notificationViewModel.unreadCount.collectAsState()
 
     // 프로필 제외한 탭 목록
     val bottomNavRoutes = listOf("home", "community", "calendar", "chat")
@@ -58,12 +68,15 @@ fun AppEntry() {
                     actions = {
                         if (currentRoute in bottomNavRoutes) {
                             IconButton(onClick = {
-                                // 현재 로그인한 유저의 uid를 가져옴
-                                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                                // userId를 포함해서 알림 화면으로 이동
                                 navController.navigate("notifications/$userId")
                             }) {
-                                Icon(Icons.Filled.Notifications, contentDescription = "알림")
+                                BadgedBox(badge = {
+                                    if (unreadCount > 0) {
+                                        Badge { Text(unreadCount.toString()) }
+                                    }
+                                }) {
+                                    Icon(Icons.Filled.Notifications, contentDescription = "알림")
+                                }
                             }
                             IconButton(onClick = { navController.navigate("profile") }) {
                                 Icon(
@@ -121,7 +134,9 @@ fun AppEntry() {
                     onAiRecommendClick = { navController.navigate("chat") }
                 )
             }
-            composable("community") { CommunityScreen() }
+            composable("community") {
+                CommunityScreen(navController = navController)
+            }
             composable("calendar") {
                 val context = LocalContext.current
                 val dao = remember {
@@ -147,7 +162,22 @@ fun AppEntry() {
                 arguments = listOf(navArgument("userId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
-                NotificationScreen(userId = userId)
+                NotificationScreen(
+                    navController = navController,
+                    userId = userId
+                )
+            }
+            composable(
+                route = "communityPostDetail/{postId}",
+                arguments = listOf(navArgument("postId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val postId = backStackEntry.arguments?.getString("postId") ?: ""
+                val viewModel: CommunityViewModel = hiltViewModel()
+                CommunityPostDetail(
+                    postId = postId,
+                    viewModel = viewModel,
+                    navController = navController
+                )
             }
         }
     }

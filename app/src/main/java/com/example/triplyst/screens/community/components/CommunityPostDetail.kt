@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.triplyst.model.CommunityPost
 import com.example.triplyst.screens.community.utils.formatFirestoreTimestamp
 import com.example.triplyst.viewmodel.community.CommunityViewModel
@@ -22,7 +23,7 @@ import com.google.firebase.auth.FirebaseAuth
 fun CommunityPostDetail(
     postId: String,
     viewModel: CommunityViewModel,
-    onBack: () -> Unit
+    navController: NavController
 ) {
     val comments by viewModel.comments.collectAsState()
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
@@ -40,7 +41,7 @@ fun CommunityPostDetail(
             TopAppBar(
                 title = { Text(post?.title ?: "") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "뒤로가기")
                     }
                 }

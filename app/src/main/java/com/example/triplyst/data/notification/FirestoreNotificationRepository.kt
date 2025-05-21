@@ -33,11 +33,21 @@ class FirestoreNotificationRepository : NotificationRepository {
         awaitClose { listener.remove() }
     }
 
+    override fun observeUnreadCount(userId: String): Flow<Int> = callbackFlow {
+        val listener = notificationsCollection
+            .whereEqualTo("userId", userId)
+            .whereEqualTo("read", false)
+            .addSnapshotListener { snapshot, _ ->
+                trySend(snapshot?.size() ?: 0) // 읽지 않은 알림 개수 전송
+            }
+        awaitClose { listener.remove() }
+    }
+
     override suspend fun addNotification(notification: Notification) {
         notificationsCollection.add(notification).await()
     }
 
     override suspend fun markAsRead(notificationId: String) {
-        notificationsCollection.document(notificationId).update("isRead", true).await()
+        notificationsCollection.document(notificationId).update("read", true).await()
     }
 }

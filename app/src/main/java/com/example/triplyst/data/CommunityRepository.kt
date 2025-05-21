@@ -129,27 +129,29 @@ class CommunityRepository {
     }
 
     // 좋아요 알림 생성
-    suspend fun sendLikeNotification(postOwnerId: String, postTitle: String, likerName: String) {
+    suspend fun sendLikeNotification(postOwnerId: String, postTitle: String, likerName: String, postId: String) {
         val notification = Notification(
             userId = postOwnerId,
+            postId = postId,
             type = NotificationType.LIKE,
             title = "새로운 좋아요",
             message = "$likerName 님이 '$postTitle' 글에 좋아요를 눌렀어요!",
             timestamp = System.currentTimeMillis(),
-            isRead = false
+            read = false
         )
         Firebase.firestore.collection("notifications").add(notification).await()
     }
 
     // 댓글 알림 생성
-    suspend fun sendCommentNotification(postOwnerId: String, postTitle: String, commenterName: String, comment: String) {
+    suspend fun sendCommentNotification(postOwnerId: String, postTitle: String, commenterName: String, comment: String, postId: String) {
         val notification = Notification(
             userId = postOwnerId,
+            postId = postId,
             type = NotificationType.COMMENT,
             title = "새로운 댓글",
             message = "$commenterName: $comment",
             timestamp = System.currentTimeMillis(),
-            isRead = false
+            read = false
         )
         Firebase.firestore.collection("notifications").add(notification).await()
     }
