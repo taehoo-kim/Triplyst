@@ -58,7 +58,22 @@ class CommunityRepository {
     }
 
     suspend fun deletePost(postId: String) {
-        db.collection("community_posts").document(postId).delete().await()
+        try {
+            // 게시글을 삭제할 때 해당 게시글의 댓글도 삭제한다.
+            val comments = firestore.collection("comments")
+                .whereEqualTo("postId", postId)
+                .get()
+                .await()
+
+            val batch = firestore.batch()
+            for (comment in comments.documents) {
+                batch.delete(comment.reference)
+            }
+            batch.commit().await()
+            db.collection("community_posts").document(postId).delete().await()
+        } catch (e: Exception) {
+            throw Exception("게시글 삭제 실패: ${e.message}")
+        }
     }
 
     suspend fun getComments(postId: String): List<Comment> {
