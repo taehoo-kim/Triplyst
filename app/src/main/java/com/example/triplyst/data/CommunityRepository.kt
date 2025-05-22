@@ -139,7 +139,10 @@ class CommunityRepository {
             timestamp = System.currentTimeMillis(),
             read = false
         )
-        Firebase.firestore.collection("notifications").add(notification).await()
+        val docRef = Firebase.firestore.collection("notifications").add(notification).await()
+        Firebase.firestore.collection("notifications").document(docRef.id)
+            .update("id", docRef.id)
+            .await()
     }
 
     // 댓글 알림 생성
@@ -153,7 +156,10 @@ class CommunityRepository {
             timestamp = System.currentTimeMillis(),
             read = false
         )
-        Firebase.firestore.collection("notifications").add(notification).await()
+        val docRef = Firebase.firestore.collection("notifications").add(notification).await()
+        Firebase.firestore.collection("notifications").document(docRef.id)
+            .update("id", docRef.id)
+            .await()
     }
 
     // postId로 post 객체 가져오기
