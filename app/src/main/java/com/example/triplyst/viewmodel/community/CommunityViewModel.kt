@@ -89,6 +89,18 @@ class CommunityViewModel (
         }
     }
 
+    fun deleteComment(postId: String, commentId: String) {
+        viewModelScope.launch {
+            try {
+                repository.deleteComment(commentId)
+                // 필요하다면 댓글 목록 새로고침
+                loadComments(postId)
+            } catch (e: Exception) {
+                // 에러 처리
+            }
+        }
+    }
+
     fun submitComment(postId: String, content: String) {
         viewModelScope.launch {
             val user = FirebaseAuth.getInstance().currentUser ?: run {

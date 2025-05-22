@@ -91,6 +91,15 @@ class CommunityRepository {
             .await()
     }
 
+    suspend fun deleteComment(commentId: String) {
+        try {
+            firestore.collection("comments").document(commentId).delete().await()
+        } catch (e: Exception) {
+            throw Exception("댓글 삭제 실패: ${e.message}")
+        }
+    }
+
+
     suspend fun toggleLike(postId: String, userId: String, isLiked: Boolean) {
         val postRef = firestore.collection("community_posts").document(postId)
         firestore.runTransaction { transaction ->

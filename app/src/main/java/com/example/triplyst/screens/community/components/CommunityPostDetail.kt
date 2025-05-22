@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.triplyst.model.CommunityPost
 import com.example.triplyst.screens.community.utils.formatFirestoreTimestamp
@@ -22,7 +23,7 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun CommunityPostDetail(
     postId: String,
-    viewModel: CommunityViewModel,
+    viewModel: CommunityViewModel = hiltViewModel(),
     navController: NavController
 ) {
     val comments by viewModel.comments.collectAsState()
@@ -94,7 +95,9 @@ fun CommunityPostDetail(
                 Spacer(modifier = Modifier.height(10.dp))
                 CommentSection(
                     comments = comments,
-                    onSubmitComment = { content -> viewModel.submitComment(postId, content) }
+                    currentUserId = currentUserId,
+                    onSubmitComment = { content -> viewModel.submitComment(postId, content) },
+                    onDeleteComment = { commentId -> viewModel.deleteComment(postId, commentId) }
                 )
             }
         } ?: run {

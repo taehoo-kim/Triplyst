@@ -15,7 +15,9 @@ import com.example.triplyst.model.Comment
 @Composable
 fun CommentSection(
     comments: List<Comment>,
-    onSubmitComment: (String) -> Unit
+    currentUserId: String,
+    onSubmitComment: (String) -> Unit,
+    onDeleteComment: (String) -> Unit
 ) {
     var commentText by remember { mutableStateOf("") }
 
@@ -40,7 +42,10 @@ fun CommentSection(
         )
         LazyColumn(Modifier.padding(top = 8.dp)) {
             items(comments) { comment ->
-                CommentItem(comment = comment)
+                CommentItem(
+                    comment = comment,
+                    onDelete = if (comment.userId == currentUserId) onDeleteComment else null
+                )
             }
         }
     }
