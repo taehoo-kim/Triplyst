@@ -23,7 +23,7 @@ class NotificationViewModel @Inject constructor(
     val notifications: StateFlow<List<Notification>> = _notifications.asStateFlow()
 
     private val _unreadCount = MutableStateFlow(0)
-    val unreadCount: StateFlow<Int> = _unreadCount
+    val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
 
     private var notificationsJob: Job? = null
     private var unreadCountJob: Job? = null

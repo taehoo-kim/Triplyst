@@ -26,7 +26,7 @@ class FirestoreNotificationRepository : NotificationRepository {
                 if (snapshot != null) {
                     val notifications = snapshot.documents.mapNotNull { doc ->
                         val noti = doc.toObject(Notification::class.java)
-                        noti?.copy(documentId  = doc.id)
+                        noti?.copy(documentId = doc.id)
                     }
                     trySend(notifications)
                 }

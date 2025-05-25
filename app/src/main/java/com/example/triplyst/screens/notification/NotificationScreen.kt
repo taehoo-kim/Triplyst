@@ -26,6 +26,10 @@ fun NotificationScreen(
 ) {
     val notifications by viewModel.notifications.collectAsState()
 
+    LaunchedEffect(userId) {
+        viewModel.observeMyNotifications(userId)
+    }
+
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         items(notifications) { notification ->
             NotificationItem(
