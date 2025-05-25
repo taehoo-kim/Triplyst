@@ -25,10 +25,6 @@ fun NotificationScreen(
     userId: String
 ) {
     val notifications by viewModel.notifications.collectAsState()
-    // 화면 진입 시 내 알림 구독 시작
-    LaunchedEffect(userId) {
-        viewModel.observeMyNotifications(userId)
-    }
 
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         items(notifications) { notification ->

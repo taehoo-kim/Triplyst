@@ -1,5 +1,6 @@
 package com.example.triplyst.data.notification
 
+import android.util.Log
 import com.example.triplyst.model.Notification
 import com.example.triplyst.model.NotificationType
 import com.google.firebase.firestore.Query
@@ -25,7 +26,7 @@ class FirestoreNotificationRepository : NotificationRepository {
                 if (snapshot != null) {
                     val notifications = snapshot.documents.mapNotNull { doc ->
                         val noti = doc.toObject(Notification::class.java)
-                        noti?.copy(id = doc.id)
+                        noti?.copy(documentId  = doc.id)
                     }
                     trySend(notifications)
                 }
@@ -37,8 +38,13 @@ class FirestoreNotificationRepository : NotificationRepository {
         val listener = notificationsCollection
             .whereEqualTo("userId", userId)
             .whereEqualTo("read", false)
-            .addSnapshotListener { snapshot, _ ->
-                trySend(snapshot?.size() ?: 0) // 읽지 않은 알림 개수 전송
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("NotificationRepo", "Firestore listener error", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.size() ?: 0)
             }
         awaitClose { listener.remove() }
     }

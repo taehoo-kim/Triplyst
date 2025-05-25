@@ -29,7 +29,7 @@ fun NotificationItem(
                 notification.postId?.let { postId ->
                     onItemClick(postId)
                 }
-                onMarkAsRead(notification.id)
+                onMarkAsRead(notification.documentId)
             }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

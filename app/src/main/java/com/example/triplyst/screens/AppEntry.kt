@@ -11,12 +11,19 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
@@ -47,8 +54,36 @@ fun AppEntry() {
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, userId) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> {
+                    if (userId.isNotEmpty()) {
+                        notificationViewModel.observeMyNotifications(userId)
+                    }
+                }
+                Lifecycle.Event.ON_STOP -> {
+                    notificationViewModel.cancelObservations()
+                }
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            notificationViewModel.cancelObservations()
+        }
+    }
+
     // 프로필 제외한 탭 목록
     val bottomNavRoutes = listOf("home", "community", "calendar", "chat")
+
+    LaunchedEffect(userId) {
+        if (userId.isNotEmpty()) {
+            notificationViewModel.observeMyNotifications(userId)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -70,11 +105,21 @@ fun AppEntry() {
                             IconButton(onClick = {
                                 navController.navigate("notifications/$userId")
                             }) {
-                                BadgedBox(badge = {
-                                    if (unreadCount > 0) {
-                                        Badge { Text(unreadCount.toString()) }
+                                BadgedBox(
+                                    badge = {
+                                        if (unreadCount > 0) {
+                                            Badge {
+                                                Text(
+                                                    text = unreadCount.toString(),
+                                                    modifier = Modifier
+                                                        .graphicsLayer {
+                                                            compositingStrategy = CompositingStrategy.Offscreen
+                                                        }
+                                                )
+                                            }
+                                        }
                                     }
-                                }) {
+                                ) {
                                     Icon(Icons.Filled.Notifications, contentDescription = "알림")
                                 }
                             }
