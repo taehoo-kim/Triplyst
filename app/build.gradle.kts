@@ -15,9 +15,20 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
+val secretsProperties = Properties()
+val secretsPropertiesFile = rootProject.file("secrets.properties")
+if (secretsPropertiesFile.exists()) {
+    secretsProperties.load(secretsPropertiesFile.inputStream())
+}
+
 android {
     namespace = "com.example.triplyst"
     compileSdk = 35
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.example.triplyst"
@@ -35,6 +46,14 @@ android {
                 )
             }
         }
+
+        buildConfigField(
+            "String",
+            "KAKAO_NATIVE_APP_KEY",
+            "\"${secretsProperties["KAKAO_NATIVE_APP_KEY"] ?: ""}\""
+        )
+
+        manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = secretsProperties["KAKAO_NATIVE_APP_KEY"] as? String ?: ""
 
     }
     signingConfigs {
@@ -109,4 +128,6 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.56.1")
     kapt("com.google.dagger:hilt-android-compiler:2.56.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    implementation("com.kakao.sdk:v2-user:2.21.3")
 }
