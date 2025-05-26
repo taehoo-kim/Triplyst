@@ -7,8 +7,8 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import com.example.triplyst.model.CommunityPost
 import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.ktx.toObjects
+import com.example.triplyst.model.Notification
+import com.example.triplyst.model.NotificationType
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -58,7 +58,22 @@ class CommunityRepository {
     }
 
     suspend fun deletePost(postId: String) {
-        db.collection("community_posts").document(postId).delete().await()
+        try {
+            // 게시글을 삭제할 때 해당 게시글의 댓글도 삭제한다.
+            val comments = firestore.collection("comments")
+                .whereEqualTo("postId", postId)
+                .get()
+                .await()
+
+            val batch = firestore.batch()
+            for (comment in comments.documents) {
+                batch.delete(comment.reference)
+            }
+            batch.commit().await()
+            db.collection("community_posts").document(postId).delete().await()
+        } catch (e: Exception) {
+            throw Exception("게시글 삭제 실패: ${e.message}")
+        }
     }
 
     suspend fun getComments(postId: String): List<Comment> {
@@ -75,6 +90,15 @@ class CommunityRepository {
             .add(comment)
             .await()
     }
+
+    suspend fun deleteComment(commentId: String) {
+        try {
+            firestore.collection("comments").document(commentId).delete().await()
+        } catch (e: Exception) {
+            throw Exception("댓글 삭제 실패: ${e.message}")
+        }
+    }
+
 
     suspend fun toggleLike(postId: String, userId: String, isLiked: Boolean) {
         val postRef = firestore.collection("community_posts").document(postId)
@@ -111,5 +135,48 @@ class CommunityRepository {
             Log.e("CommunityRepository", "updateAuthorName 실패", e)
             throw e
         }
+    }
+
+    // 좋아요 알림 생성
+    suspend fun sendLikeNotification(postOwnerId: String, postTitle: String, likerName: String, postId: String) {
+        val notification = Notification(
+            userId = postOwnerId,
+            postId = postId,
+            type = NotificationType.LIKE,
+            title = "새로운 좋아요",
+            message = "$likerName 님이 '$postTitle' 글에 좋아요를 눌렀어요!",
+            timestamp = System.currentTimeMillis(),
+            read = false
+        )
+        val docRef = Firebase.firestore.collection("notifications").add(notification).await()
+        Firebase.firestore.collection("notifications").document(docRef.id)
+            .update("id", docRef.id)
+            .await()
+    }
+
+    // 댓글 알림 생성
+    suspend fun sendCommentNotification(postOwnerId: String, postTitle: String, commenterName: String, comment: String, postId: String) {
+        val notification = Notification(
+            userId = postOwnerId,
+            postId = postId,
+            type = NotificationType.COMMENT,
+            title = "새로운 댓글",
+            message = "$commenterName: $comment",
+            timestamp = System.currentTimeMillis(),
+            read = false
+        )
+        val docRef = Firebase.firestore.collection("notifications").add(notification).await()
+        Firebase.firestore.collection("notifications").document(docRef.id)
+            .update("id", docRef.id)
+            .await()
+    }
+
+    // postId로 post 객체 가져오기
+    suspend fun getPostById(postId: String): CommunityPost? {
+        val snapshot = firestore.collection("community_posts")
+            .document(postId)
+            .get()
+            .await()
+        return snapshot.toObject(CommunityPost::class.java)
     }
 }

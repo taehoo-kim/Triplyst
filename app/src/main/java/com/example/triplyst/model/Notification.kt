@@ -1,16 +1,17 @@
 package com.example.triplyst.model
 
-import java.util.UUID
+import com.google.firebase.firestore.DocumentId
 
-enum class NotificationType {
-    COMMENT, LIKE, SCHEDULE
-}
+enum class NotificationType { LIKE, COMMENT, SCHEDULE }
 
 data class Notification(
-    val id: String = UUID.randomUUID().toString(),
-    val type: NotificationType,
-    val title: String,
-    val message: String,
+    @DocumentId val documentId: String = "",
+    val userId: String = "",
+    val postId: String? = null,
+    val type: NotificationType = NotificationType.LIKE,
+    val title: String = "",
+    val message: String = "",
     val timestamp: Long = System.currentTimeMillis(),
-    val isRead: Boolean = false
+    val read: Boolean = false
 )
+

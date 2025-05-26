@@ -1,5 +1,6 @@
 package com.example.triplyst.screens.notification
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Comment
@@ -15,11 +16,21 @@ import com.example.triplyst.model.Notification
 import com.example.triplyst.model.NotificationType
 
 @Composable
-fun NotificationItem(notification: Notification) {
+fun NotificationItem(
+    notification: Notification,
+    onItemClick: (String) -> Unit,
+    onMarkAsRead: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
+            .clickable {
+                notification.postId?.let { postId ->
+                    onItemClick(postId)
+                }
+                onMarkAsRead(notification.documentId)
+            }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(

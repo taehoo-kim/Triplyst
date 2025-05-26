@@ -10,7 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.triplyst.model.CommunityPost
 import com.example.triplyst.screens.community.components.*
 import com.example.triplyst.viewmodel.community.*
@@ -23,7 +25,8 @@ import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun CommunityScreen(
-    viewModel: CommunityViewModel = viewModel()
+    navController: NavController,
+    viewModel: CommunityViewModel = hiltViewModel()
 ) {
 
     val uiState by viewModel.uiState.collectAsState()
@@ -62,7 +65,7 @@ fun CommunityScreen(
             if (selectedPost != null) {
                 CommunityPostDetail(
                     postId = selectedPost!!.id,
-                    onBack = { selectedPost = null },
+                    navController = navController,
                     viewModel = viewModel
                 )
             } else if (isWriting) {

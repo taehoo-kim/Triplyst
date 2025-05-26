@@ -3,7 +3,9 @@ package com.example.triplyst.viewmodel.login
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.triplyst.R
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -14,8 +16,11 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
+import com.kakao.sdk.auth.model.OAuthToken
+import com.kakao.sdk.user.UserApiClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.util.UUID
 import kotlinx.coroutines.tasks.await
 
@@ -35,7 +40,7 @@ class LoginViewModel : ViewModel() {
             .setGoogleIdTokenRequestOptions(
                 BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
                     .setSupported(true)
-                    .setServerClientId(context.getString(R.string.default_web_client_id)) // 🔥 Firebase 콘솔에서 복사한 값으로 변경
+                    .setServerClientId(context.getString(R.string.default_web_client_id))
                     .setFilterByAuthorizedAccounts(false)
                     .build()
             )
@@ -79,6 +84,50 @@ class LoginViewModel : ViewModel() {
             _loginState.value = LoginState.Error("구글 로그인 오류: ${e.message}")
         }
 
+    }
+
+    // 카카오 로그인 시작
+    fun startKakaoLogin(context: Context) {
+        _loginState.value = LoginState.Loading
+        viewModelScope.launch {
+            try {
+                if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
+                    startKakaoTalkLogin(context)
+                } else {
+                    startKakaoAccountLogin(context)
+                }
+            } catch (e: Exception) {
+                _loginState.value = LoginState.Error("카카오 로그인 실패: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    private fun startKakaoTalkLogin(context: Context) {
+        UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
+            handleKakaoResponse(token, error)
+        }
+    }
+
+    private fun startKakaoAccountLogin(context: Context) {
+        UserApiClient.instance.loginWithKakaoAccount(context) { token, error ->
+            handleKakaoResponse(token, error)
+        }
+    }
+
+    private fun handleKakaoResponse(token: OAuthToken?, error: Throwable?) {
+        when {
+            error != null -> {
+                Log.e("LoginViewModel", "카카오 로그인 실패: ${error.localizedMessage}", error)
+                _loginState.value = LoginState.Error("카카오 로그인 실패: ${error.localizedMessage}")
+            }
+            token != null -> {
+                Log.d("LoginViewModel", "카카오 로그인 성공! AccessToken: $token")
+                _loginState.value = LoginState.Success
+            }
+            else -> {
+                _loginState.value = LoginState.Error("알 수 없는 오류 발생")
+            }
+        }
     }
 
     fun login(email: String, password: String) {
