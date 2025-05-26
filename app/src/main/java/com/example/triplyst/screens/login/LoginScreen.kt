@@ -98,7 +98,7 @@ fun LoginScreen(
             text = "카카오로 계속하기",
             color = Color(0xFFFEE500),
             iconRes = R.drawable.ic_kakao,
-            onClick = { /* TODO: 카카오 로그인 */ }
+            onClick = { loginViewModel.startKakaoLogin(context) }
         )
         Spacer(modifier = Modifier.height(16.dp))
         SocialLoginButton(
