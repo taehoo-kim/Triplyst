@@ -35,7 +35,9 @@ import com.example.triplyst.screens.chat.ChatScreen
 import com.example.triplyst.screens.community.CommunityScreen
 import com.example.triplyst.screens.community.components.CommunityPostDetail
 import com.example.triplyst.screens.home.HomeScreen
+import com.example.triplyst.screens.login.EmailAuthScreen
 import com.example.triplyst.screens.login.LoginScreen
+import com.example.triplyst.screens.login.PasswordResetScreen
 import com.example.triplyst.screens.notification.NotificationScreen
 import com.example.triplyst.screens.profile.ProfileScreen
 import com.example.triplyst.viewmodel.community.CommunityViewModel
@@ -170,9 +172,25 @@ fun AppEntry() {
                         navController.navigate("home") {
                             popUpTo("login") { inclusive = true }
                         }
-                    }
+                    },
+                    onEmailAuthClick = { navController.navigate("email_auth") }
                 )
-
+            }
+            composable("email_auth") {
+                EmailAuthScreen(
+                    onLoginSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.popBackStack() },
+                    onPasswordReset = { navController.navigate("password_reset") }
+                )
+            }
+            composable("password_reset") {
+                PasswordResetScreen(
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable("home") {
                 HomeScreen(

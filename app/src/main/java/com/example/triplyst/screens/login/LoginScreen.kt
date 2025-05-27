@@ -47,7 +47,8 @@ import com.example.triplyst.R
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onEmailAuthClick: () -> Unit
 ) {
     val loginState by loginViewModel.loginState.collectAsState()
     val context = LocalContext.current
@@ -59,13 +60,6 @@ fun LoginScreen(
         loginViewModel.handleGoogleSignInResult(context, result.data)
     }
 
-    // 이메일/비밀번호 입력 폼 노출 여부
-    var showEmailLogin by remember { mutableStateOf(false) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isSignUpMode by remember { mutableStateOf(false) }
-    var emailError by remember { mutableStateOf<String?>(null) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -73,7 +67,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("로그인",
+        Text("Triplyst",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             )
@@ -110,59 +104,13 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 이메일 로그인 펼치기 버튼
-        TextButton(onClick = { showEmailLogin = !showEmailLogin }) {
-            Text(if (showEmailLogin) "이메일 로그인 닫기" else "이메일로 로그인")
-        }
-
-        // 이메일/비밀번호 입력 폼 (펼침)
-        if (showEmailLogin) {
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = email,
-                onValueChange = {
-                    email = it
-                    emailError = null
-                },
-                label = { Text("이메일") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = emailError != null
-            )
-            if (emailError != null) {
-                Text(emailError!!, color = MaterialTheme.colorScheme.error)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("비밀번호") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    val trimmedEmail = email.trim()
-                    if (!Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
-                        emailError = "올바른 이메일 형식을 입력하세요."
-                        return@Button
-                    }
-                    if (isSignUpMode) {
-                        loginViewModel.signup(email, password)
-                    } else {
-                        loginViewModel.login(email, password)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = loginState != LoginState.Loading
+        TextButton(onClick = onEmailAuthClick,
+            modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (isSignUpMode) "회원가입" else "로그인")
-            }
-            TextButton(onClick = { isSignUpMode = !isSignUpMode }) {
-                Text(if (isSignUpMode) "이미 계정이 있으신가요? 로그인" else "계정이 없으신가요? 회원가입")
-            }
+            Text("이메일로 계속하기", color = MaterialTheme.colorScheme.primary)
         }
 
-        // 에러/로딩 표시
+        // 에러/로딩 표시, 배포할 때는 지워야 됨.
         if (loginState is LoginState.Error) {
             Text((loginState as LoginState.Error).message, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(8.dp))

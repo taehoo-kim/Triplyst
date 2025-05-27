@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.util.Log
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.triplyst.R
@@ -134,24 +135,73 @@ class LoginViewModel : ViewModel() {
         _loginState.value = LoginState.Loading
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                _loginState.value = if (task.isSuccessful) {
-                    LoginState.Success
+                if (task.isSuccessful) {
+                    // 이메일 인증 여부 확인
+                    if (auth.currentUser?.isEmailVerified == true) {
+                        _loginState.value = LoginState.Success
+                    } else {
+                        auth.signOut() // 인증 안된 사용자 로그아웃
+                        _loginState.value = LoginState.Error("이메일 인증이 완료되지 않았습니다")
+                    }
                 } else {
-                    LoginState.Error(task.exception?.message ?: "로그인 실패")
+                    _loginState.value = LoginState.Error(task.exception?.message ?: "로그인 실패")
+                }
+            }
+    }
+
+    // 이메일 인증 메일 재전송 (아직 ui에 추가 X)
+    fun resendVerificationEmail() {
+        auth.currentUser?.sendEmailVerification()
+            ?.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _loginState.value = LoginState.Info("인증 메일이 재전송되었습니다")
+                } else {
+                    _loginState.value = LoginState.Error("메일 전송 실패: ${task.exception?.message}")
+                }
+            }
+    }
+
+    // 비밀번호 재설정
+    fun resetPassword(email: String) {
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _loginState.value = LoginState.Error("유효한 이메일 형식을 입력하세요")
+            return
+        }
+
+        _loginState.value = LoginState.Loading
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _loginState.value = LoginState.Info("비밀번호 재설정 메일이 전송되었습니다")
+                } else {
+                    _loginState.value = LoginState.Error("메일 전송 실패: ${task.exception?.message}")
                 }
             }
     }
 
     fun signup(email: String, password: String) {
+        // 입력 유효성 검사
+        when {
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                _loginState.value = LoginState.Error("유효한 이메일 형식이 아닙니다")
+                return
+            }
+            password.length < 8 -> {
+                _loginState.value = LoginState.Error("비밀번호는 8자 이상이어야 합니다")
+                return
+            }
+        }
+
         _loginState.value = LoginState.Loading
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    sendVerificationEmail() // 인증 메일 전송
                     val user = auth.currentUser
                     val nickname = generateRandomNickname()
                     saveUserProfile(user?.uid, user?.email, nickname)
 
-                    // displayName 업데이트
+                    // 닉네임 설정
                     user?.updateProfile(
                         UserProfileChangeRequest.Builder()
                             .setDisplayName(nickname)
@@ -162,6 +212,13 @@ class LoginViewModel : ViewModel() {
                 } else {
                     _loginState.value = LoginState.Error(task.exception?.message ?: "회원가입 실패")
                 }
+            }
+    }
+
+    private fun sendVerificationEmail() {
+        auth.currentUser?.sendEmailVerification()
+            ?.addOnFailureListener { e ->
+                Log.e("LoginViewModel", "인증 메일 전송 실패", e)
             }
     }
 
@@ -201,6 +258,10 @@ class LoginViewModel : ViewModel() {
             .document(uid)
             .set(userMap)
     }
+
+    fun updateErrorState(message: String) {
+        _loginState.value = LoginState.Error(message)
+    }
 }
 
 sealed class LoginState {
@@ -208,4 +269,5 @@ sealed class LoginState {
     object Loading : LoginState()
     object Success : LoginState()
     data class Error(val message: String) : LoginState()
+    data class Info(val message: String) : LoginState()
 }
