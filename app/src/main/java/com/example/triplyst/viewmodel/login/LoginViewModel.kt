@@ -136,12 +136,14 @@ class LoginViewModel : ViewModel() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    // 이메일 인증 여부 확인
-                    if (auth.currentUser?.isEmailVerified == true) {
-                        _loginState.value = LoginState.Success
-                    } else {
-                        auth.signOut() // 인증 안된 사용자 로그아웃
-                        _loginState.value = LoginState.Error("이메일 인증이 완료되지 않았습니다")
+                    // 이메일 인증했는지 계속 확인하는 로직 추가
+                    auth.currentUser?.reload()?.addOnCompleteListener {
+                        if (auth.currentUser?.isEmailVerified == true) {
+                            _loginState.value = LoginState.Success
+                        } else {
+                            auth.signOut()
+                            _loginState.value = LoginState.Error("이메일 인증이 완료되지 않았습니다.\n인증 메일을 확인해 주세요.")
+                        }
                     }
                 } else {
                     _loginState.value = LoginState.Error(task.exception?.message ?: "로그인 실패")
@@ -207,8 +209,8 @@ class LoginViewModel : ViewModel() {
                             .setDisplayName(nickname)
                             .build()
                     )
-
-                    _loginState.value = LoginState.Success
+                    auth.signOut()
+                    _loginState.value = LoginState.Info("인증 메일이 발송되었습니다. 인증 후 다시 로그인해 주세요.")
                 } else {
                     _loginState.value = LoginState.Error(task.exception?.message ?: "회원가입 실패")
                 }

@@ -57,16 +57,6 @@ fun EmailAuthScreen(
             .padding(32.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        // 임시 코드
-        TextButton(
-            onClick = onBack,
-            modifier = Modifier.align(Alignment.Start)
-        ) {
-            Text("← 뒤로가기")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         Text(
             text = if (isSignUpMode) "회원가입" else "로그인",
             style = MaterialTheme.typography.headlineLarge,
