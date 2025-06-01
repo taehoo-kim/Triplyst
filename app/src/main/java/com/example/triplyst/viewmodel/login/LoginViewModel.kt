@@ -1,5 +1,7 @@
 package com.example.triplyst.viewmodel.login
 
+import com.navercorp.nid.NaverIdLoginSDK
+import com.navercorp.nid.oauth.OAuthLoginCallback
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
@@ -87,6 +89,8 @@ class LoginViewModel : ViewModel() {
 
     }
 
+    // TODO: accessToken을 서버로 보내 Firebase Custom Token 발급 및 로그인 처리(카카오, 네이버)
+    
     // 카카오 로그인 시작
     fun startKakaoLogin(context: Context) {
         _loginState.value = LoginState.Loading
@@ -129,6 +133,24 @@ class LoginViewModel : ViewModel() {
                 _loginState.value = LoginState.Error("알 수 없는 오류 발생")
             }
         }
+    }
+
+    // 네이버 로그인 시작
+    fun startNaverLogin(context: Context) {
+        _loginState.value = LoginState.Loading
+
+        NaverIdLoginSDK.authenticate(context, object : OAuthLoginCallback {
+            override fun onSuccess() {
+                val accessToken = NaverIdLoginSDK.getAccessToken()
+                _loginState.value = LoginState.Info("네이버 로그인 성공 (Firebase 연동 필요)")
+            }
+            override fun onFailure(httpStatus: Int, message: String) {
+                _loginState.value = LoginState.Error("네이버 로그인 실패: $message")
+            }
+            override fun onError(errorCode: Int, message: String) {
+                _loginState.value = LoginState.Error("네이버 로그인 에러: $message")
+            }
+        })
     }
 
     fun login(email: String, password: String) {

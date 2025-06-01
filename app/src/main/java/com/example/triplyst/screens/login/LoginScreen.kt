@@ -96,10 +96,10 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
         SocialLoginButton(
-            text = "페이스북으로 계속하기",
-            color = Color(0xFF1877F2),
-            iconRes = R.drawable.ic_facebook,
-            onClick = { /* TODO: 페이스북 로그인 */ }
+            text = "네이버로 계속하기",
+            color = Color(0xFF03C75A),
+            iconRes = R.drawable.ic_naver,
+            onClick = { loginViewModel.startNaverLogin(context) }
         )
         Spacer(modifier = Modifier.height(32.dp))
 

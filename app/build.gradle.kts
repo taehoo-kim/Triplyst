@@ -130,4 +130,7 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     implementation("com.kakao.sdk:v2-user:2.21.3")
+
+    implementation("com.navercorp.nid:oauth:5.10.0")
+
 }
