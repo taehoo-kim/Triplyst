@@ -1,9 +1,12 @@
 package com.example.triplyst.viewmodel.login
 
+import com.navercorp.nid.NaverIdLoginSDK
+import com.navercorp.nid.oauth.OAuthLoginCallback
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.util.Log
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.triplyst.R
@@ -86,6 +89,8 @@ class LoginViewModel : ViewModel() {
 
     }
 
+    // TODO: accessToken을 서버로 보내 Firebase Custom Token 발급 및 로그인 처리(카카오, 네이버)
+    
     // 카카오 로그인 시작
     fun startKakaoLogin(context: Context) {
         _loginState.value = LoginState.Loading
@@ -130,38 +135,114 @@ class LoginViewModel : ViewModel() {
         }
     }
 
+    // 네이버 로그인 시작
+    fun startNaverLogin(context: Context) {
+        _loginState.value = LoginState.Loading
+
+        NaverIdLoginSDK.authenticate(context, object : OAuthLoginCallback {
+            override fun onSuccess() {
+                val accessToken = NaverIdLoginSDK.getAccessToken()
+                _loginState.value = LoginState.Info("네이버 로그인 성공 (Firebase 연동 필요)")
+            }
+            override fun onFailure(httpStatus: Int, message: String) {
+                _loginState.value = LoginState.Error("네이버 로그인 실패: $message")
+            }
+            override fun onError(errorCode: Int, message: String) {
+                _loginState.value = LoginState.Error("네이버 로그인 에러: $message")
+            }
+        })
+    }
+
     fun login(email: String, password: String) {
         _loginState.value = LoginState.Loading
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                _loginState.value = if (task.isSuccessful) {
-                    LoginState.Success
+                if (task.isSuccessful) {
+                    // 이메일 인증했는지 계속 확인하는 로직 추가
+                    auth.currentUser?.reload()?.addOnCompleteListener {
+                        if (auth.currentUser?.isEmailVerified == true) {
+                            _loginState.value = LoginState.Success
+                        } else {
+                            auth.signOut()
+                            _loginState.value = LoginState.Error("이메일 인증이 완료되지 않았습니다.\n인증 메일을 확인해 주세요.")
+                        }
+                    }
                 } else {
-                    LoginState.Error(task.exception?.message ?: "로그인 실패")
+                    _loginState.value = LoginState.Error(task.exception?.message ?: "로그인 실패")
+                }
+            }
+    }
+
+    // 이메일 인증 메일 재전송 (아직 ui에 추가 X)
+    fun resendVerificationEmail() {
+        auth.currentUser?.sendEmailVerification()
+            ?.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _loginState.value = LoginState.Info("인증 메일이 재전송되었습니다")
+                } else {
+                    _loginState.value = LoginState.Error("메일 전송 실패: ${task.exception?.message}")
+                }
+            }
+    }
+
+    // 비밀번호 재설정
+    fun resetPassword(email: String) {
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _loginState.value = LoginState.Error("유효한 이메일 형식을 입력하세요")
+            return
+        }
+
+        _loginState.value = LoginState.Loading
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _loginState.value = LoginState.Info("비밀번호 재설정 메일이 전송되었습니다")
+                } else {
+                    _loginState.value = LoginState.Error("메일 전송 실패: ${task.exception?.message}")
                 }
             }
     }
 
     fun signup(email: String, password: String) {
+        // 입력 유효성 검사
+        when {
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                _loginState.value = LoginState.Error("유효한 이메일 형식이 아닙니다")
+                return
+            }
+            password.length < 8 -> {
+                _loginState.value = LoginState.Error("비밀번호는 8자 이상이어야 합니다")
+                return
+            }
+        }
+
         _loginState.value = LoginState.Loading
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    sendVerificationEmail() // 인증 메일 전송
                     val user = auth.currentUser
                     val nickname = generateRandomNickname()
                     saveUserProfile(user?.uid, user?.email, nickname)
 
-                    // displayName 업데이트
+                    // 닉네임 설정
                     user?.updateProfile(
                         UserProfileChangeRequest.Builder()
                             .setDisplayName(nickname)
                             .build()
                     )
-
-                    _loginState.value = LoginState.Success
+                    auth.signOut()
+                    _loginState.value = LoginState.Info("인증 메일이 발송되었습니다. 인증 후 다시 로그인해 주세요.")
                 } else {
                     _loginState.value = LoginState.Error(task.exception?.message ?: "회원가입 실패")
                 }
+            }
+    }
+
+    private fun sendVerificationEmail() {
+        auth.currentUser?.sendEmailVerification()
+            ?.addOnFailureListener { e ->
+                Log.e("LoginViewModel", "인증 메일 전송 실패", e)
             }
     }
 
@@ -201,6 +282,10 @@ class LoginViewModel : ViewModel() {
             .document(uid)
             .set(userMap)
     }
+
+    fun updateErrorState(message: String) {
+        _loginState.value = LoginState.Error(message)
+    }
 }
 
 sealed class LoginState {
@@ -208,4 +293,5 @@ sealed class LoginState {
     object Loading : LoginState()
     object Success : LoginState()
     data class Error(val message: String) : LoginState()
+    data class Info(val message: String) : LoginState()
 }
